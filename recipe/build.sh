@@ -2,16 +2,17 @@
 
 set -o xtrace -o nounset -o pipefail -o errexit
 
-DLLFLAGS=""
-if [[ ${target_platform} =~ .*osx.* ]]; then
-    DLLFLAGS="-Wl,-undefined,dynamic_lookup"
-fi
+export LUA_INCLUDE_DIR=$PREFIX/include/luajit-2.1
+export LUA_LIBRARY=$PREFIX/lib/libluajit-5.1${SHLIB_EXT}
 
-make CC=${CC} LUADIR=${BUILD_PREFIX}/include/luajit-2.1 DLLFLAGS="${DLLFLAGS} -shared -fPIC" lpeg.so
+cmake -S . -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_PREFIX_PATH=$PREFIX \
+    -DLUA_INCLUDE_DIR=$LUA_INCLUDE_DIR \
+    -DLUA_LIBRARY=$LUA_LIBRARY \
+    $CMAKE_ARGS
+cmake --build build --config Release
+cmake --install build
+
 mkdir -p ${PREFIX}/lib/lua/5.1
-install -m 644 lpeg.so ${PREFIX}/lib/lua/5.1
-ln -sf ${PREFIX}/lib/lua/5.1/lpeg.so ${PREFIX}/lib/liblpeg${SHLIB_EXT} 
-
-mkdir -p ${PREFIX}/share/lua/5.1
-install -m 644 re.lua ${PREFIX}/share/lua/5.1
-install -m 644 test.lua ${PREFIX}/share/lua/5.1
+ln -sf ${PREFIX}/lib/liblpeg${SHLIB_EXT} ${PREFIX}/lib/lua/5.1/lpeg.so
